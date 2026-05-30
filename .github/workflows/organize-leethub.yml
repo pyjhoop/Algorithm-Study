@@ -25,6 +25,7 @@ jobs:
       - name: Move LeetHub problem folders into src/leetCode/
         run: |
           set -e
+          shopt -s nullglob
           mkdir -p src/leetCode
           moved=0
           # LeetHub은 루트에 "0088-merge-sorted-array" 형식(숫자4자리-이름)의 폴더를 생성한다.
@@ -33,12 +34,14 @@ jobs:
             name="${dir%/}"
             echo "Moving $name -> src/leetCode/$name"
             # 재제출 등으로 이미 존재하면 최신 풀이로 덮어쓴다.
-            if [ -d "src/leetCode/$name" ]; then
-              git rm -rf "src/leetCode/$name" >/dev/null
-            fi
-            git mv "$name" "src/leetCode/$name"
+            rm -rf "src/leetCode/$name"
+            # git mv 대신 일반 mv 사용 (추적되지 않은 폴더/디렉터리 엣지케이스 회피)
+            mv "$name" "src/leetCode/$name"
             moved=1
           done
+          if [ "$moved" = "1" ]; then
+            git add -A
+          fi
           echo "moved=$moved" >> "$GITHUB_ENV"
 
       - name: Commit and push
